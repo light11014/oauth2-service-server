@@ -18,10 +18,13 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                .anyRequest()
-                                .authenticated()
+                                .requestMatchers("/login.html").permitAll()  // 로그인 페이지는 허용
+                                .anyRequest().authenticated()
                 )
-                .formLogin(Customizer.withDefaults());
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login.html")            // 커스텀 로그인 페이지 지정
+                        .defaultSuccessUrl("/home", true)    // 로그인 성공 후 이동
+                );
 
         return http.build();
     }
