@@ -1,4 +1,4 @@
-package dev.oauth.service_demo;
+package dev.oauth;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
