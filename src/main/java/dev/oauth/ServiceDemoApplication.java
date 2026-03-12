@@ -1,4 +1,4 @@
-package dev.oauth.service_demo;
+package dev.oauth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
