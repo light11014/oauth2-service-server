@@ -1,6 +1,5 @@
 package dev.oauth.config;
 
-import dev.oauth.filter.JwtCookieFilter;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
@@ -21,7 +17,6 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
 
     private final OAuth2AuthorizedClientService authorizedClientService;
-    private final JwtCookieFilter jwtCookieFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -41,6 +36,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .authorizationRequestRepository(new CookieAuthorizationRequestRepository())
+                        )
                         .successHandler((request, response, authentication) -> {
                             OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
                                     "service-demo",
@@ -64,7 +62,21 @@ public class SecurityConfig {
                             response.sendRedirect("http://localhost:3000/home");
                         })
                 )
-                .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwkSetUri("http://localhost:9000/oauth2/jwks")
+                        )
+                        .bearerTokenResolver(request -> {
+                            if (request.getCookies() != null) {
+                                for (Cookie cookie : request.getCookies()) {
+                                    if ("access_token".equals(cookie.getName())) {
+                                        return cookie.getValue();
+                                    }
+                                }
+                            }
+                            return null;
+                        })
+                )
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .deleteCookies("access_token")

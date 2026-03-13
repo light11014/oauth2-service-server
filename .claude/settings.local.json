@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -v -L --max-redirs 5 -c /tmp/cookies.txt -b /tmp/cookies.txt \"http://localhost:8080/oauth2/authorization/service-demo\" 2>&1 | head -100)",
+      "Bash(curl -s \"http://localhost:9000/oauth2/jwks\" 2>&1 | head -50)",
+      "Bash(curl -v -c /tmp/cookies2.txt -b /tmp/cookies2.txt \"http://localhost:9000/login\" 2>&1 | grep -E \"\\(csrf|_csrf|Set-Cookie|hidden|JSESSION\\)\")",
+      "Bash(curl -s \"http://localhost:9000/login\" -c /tmp/auth_cookies.txt 2>&1 | grep -oP 'name=\"_csrf\".*?value=\"[^\"]*\"' || curl -s \"http://localhost:9000/login\" -c /tmp/auth_cookies.txt 2>&1 | grep -i csrf)",
+      "Bash(curl -s \"http://localhost:9000/login\" -c /tmp/auth_cookies3.txt -o /tmp/login_page.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -v \"http://localhost:9000/login\" 2>&1 | tail -80)",
+      "Bash(curl -vL -c /tmp/auth_cookies4.txt \"http://localhost:9000/login\" 2>&1 | grep -E \"\\(HTTP|Location|<form|<input|_csrf|action\\)\")",
+      "Bash(JSESSION=\"190ADD24963A4A090E63CA99DA86D985\"\ncurl -v -b \"JSESSIONID=$JSESSION\" \"http://localhost:9000/login\" 2>&1 | tail -40)"
+    ]
+  }
+}
