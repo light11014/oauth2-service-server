@@ -1,31 +1,32 @@
 spring:
+  profiles:
+    active: local
+
   application:
     name: service-demo
   security:
     oauth2:
       resource-server:
         jwt:
-          jwk-set-uri: http://localhost:9000/oauth2/jwks
-          issuer-uri: http://localhost:9000
+          jwk-set-uri: ${AUTH_SERVER_URI}/oauth2/jwks
+          issuer-uri: ${AUTH_SERVER_URI}
           audiences:
             - oidc-client
       client:
         registration:
           service-demo:
-            client-id: client-a4b29c5a-c946-4060-958d-6213a8e52024
-            client-secret: 093015c6a4ec4214a6e6d0c2968c7148
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
             authorization-grant-type: authorization_code
-            redirect-uri: http://localhost:8080/login/oauth2/code/service-demo
+            redirect-uri: ${APP_BASE_URI}/login/oauth2/code/service-demo
             scope: openid, read, write, profile
         provider:
           service-demo:
-            authorization-uri: http://localhost:9000/oauth2/authorize
-            token-uri: http://localhost:9000/oauth2/token
-            user-info-uri: http://localhost:9000/userinfo
-            jwk-set-uri: http://localhost:9000/oauth2/jwks
+            authorization-uri: ${AUTH_SERVER_URI}/oauth2/authorize
+            token-uri: ${AUTH_SERVER_URI}/oauth2/token
+            user-info-uri: ${AUTH_SERVER_URI}/userinfo
+            jwk-set-uri: ${AUTH_SERVER_URI}/oauth2/jwks
             user-name-attribute: sub
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: TRACE  # 추가
+app:
+  frontend-uri: ${FRONTEND_URI}

@@ -2,8 +2,10 @@ package dev.oauth.config;
 
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -18,13 +20,16 @@ public class SecurityConfig {
 
     private final OAuth2AuthorizedClientService authorizedClientService;
 
+    @Value("${app.frontend-uri}")
+    private String frontendUri;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors
                         .configurationSource(request -> {
                             CorsConfiguration config = new CorsConfiguration();
-                            config.addAllowedOrigin("http://localhost:3000");
+                            config.addAllowedOrigin(frontendUri);
                             config.addAllowedMethod("*");
                             config.addAllowedHeader("*");
                             config.setAllowCredentials(true);
@@ -46,7 +51,7 @@ public class SecurityConfig {
                             );
 
                             if (client == null) {
-                                response.sendRedirect("http://localhost:3000/login?error=no_client");
+                                response.sendRedirect(frontendUri + "/login?error=no_client");
                                 return;
                             }
 
@@ -59,13 +64,11 @@ public class SecurityConfig {
                             cookie.setMaxAge(3600);
                             response.addCookie(cookie);
 
-                            response.sendRedirect("http://localhost:3000/home");
+                            response.sendRedirect(frontendUri + "/home");
                         })
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .jwkSetUri("http://localhost:9000/oauth2/jwks")
-                        )
+                        .jwt(Customizer.withDefaults())   // jwk-set-uri는 yml에서 주입
                         .bearerTokenResolver(request -> {
                             if (request.getCookies() != null) {
                                 for (Cookie cookie : request.getCookies()) {
@@ -81,7 +84,7 @@ public class SecurityConfig {
                         .logoutUrl("/api/auth/logout")
                         .deleteCookies("access_token")
                         .logoutSuccessHandler((request, response, authentication) ->
-                                response.sendRedirect("http://localhost:3000/login")
+                                response.sendRedirect(frontendUri + "/login")
                         )
                 );
 
