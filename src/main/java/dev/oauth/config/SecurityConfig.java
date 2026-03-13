@@ -1,41 +1,78 @@
 package dev.oauth.config;
 
+import dev.oauth.filter.JwtCookieFilter;
+import jakarta.servlet.http.Cookie;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final OAuth2AuthorizedClientService authorizedClientService;
+    private final JwtCookieFilter jwtCookieFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(authorize ->
-                        authorize
-                                .requestMatchers("/login.html").permitAll()  // 로그인 페이지는 허용
-                                .anyRequest().authenticated()
+                .cors(cors -> cors
+                        .configurationSource(request -> {
+                            CorsConfiguration config = new CorsConfiguration();
+                            config.addAllowedOrigin("http://localhost:3000");
+                            config.addAllowedMethod("*");
+                            config.addAllowedHeader("*");
+                            config.setAllowCredentials(true);
+                            return config;
+                        })
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login.html")            // 커스텀 로그인 페이지 지정
-                        .defaultSuccessUrl("/home", true)    // 로그인 성공 후 이동
+                        .successHandler((request, response, authentication) -> {
+                            OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                                    "service-demo",
+                                    authentication.getName()
+                            );
+
+                            if (client == null) {
+                                response.sendRedirect("http://localhost:3000/login?error=no_client");
+                                return;
+                            }
+
+                            String accessToken = client.getAccessToken().getTokenValue();
+
+                            Cookie cookie = new Cookie("access_token", accessToken);
+                            cookie.setHttpOnly(true);
+                            cookie.setSecure(false);
+                            cookie.setPath("/");
+                            cookie.setMaxAge(3600);
+                            response.addCookie(cookie);
+
+                            response.sendRedirect("http://localhost:3000/home");
+                        })
+                )
+                .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .deleteCookies("access_token")
+                        .logoutSuccessHandler((request, response, authentication) ->
+                                response.sendRedirect("http://localhost:3000/login")
+                        )
                 );
 
         return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        var user = User.withUsername("user")
-                .password("{noop}1234")
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(user);
-
     }
 }
