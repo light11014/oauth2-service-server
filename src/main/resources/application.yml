@@ -11,7 +11,7 @@ spring:
           jwk-set-uri: ${AUTH_SERVER_URI}/oauth2/jwks
           issuer-uri: ${AUTH_SERVER_URI}
           audiences:
-            - oidc-client
+            - ${OAUTH2_CLIENT_ID}
       client:
         registration:
           service-demo:
