@@ -12,11 +12,11 @@ spring:
       client:
         registration:
           service-demo:
-            client-id: oidc-client
-            client-secret: secret
+            client-id: client-a4b29c5a-c946-4060-958d-6213a8e52024
+            client-secret: 093015c6a4ec4214a6e6d0c2968c7148
             authorization-grant-type: authorization_code
             redirect-uri: http://localhost:8080/login/oauth2/code/service-demo
-            scope: openid, profile
+            scope: openid, read, write, profile
         provider:
           service-demo:
             authorization-uri: http://localhost:9000/oauth2/authorize

@@ -15,8 +15,7 @@ public class UserController {
     @GetMapping("/me")
     public Map<String, Object> me(@AuthenticationPrincipal Jwt jwt) {
         return Map.of(
-                "sub",  jwt.getSubject(),
-                "name", jwt.getClaim("name") != null ? jwt.getClaim("name") : ""
+                "sub",  jwt.getSubject()
         );
     }
 }
